@@ -1,0 +1,116 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output/
+
+# Production
+build/
+dist/
+.next/
+out/
+
+# Misc
+.DS_Store
+*.pem
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# OS
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.iml
+
+# Python
+python/venv/
+python/.venv/
+python/__pycache__/
+python/*.py[cod]
+python/*$py.class
+python/*.so
+python/.Python
+python/build/
+python/develop-eggs/
+python/dist/
+python/downloads/
+python/eggs/
+python/.eggs/
+python/lib/
+python/lib64/
+python/parts/
+python/sdist/
+python/var/
+python/wheels/
+python/pip-wheel-metadata/
+python/share/python-wheels/
+python/*.egg-info/
+python/.installed.cfg
+python/*.egg
+python/MANIFEST
+python/.pytest_cache/
+python/.coverage
+python/htmlcov/
+
+# Temporary files
+*.tmp
+*.bak
+tmp/
+temp/
+
+# IDE specific files
+.vscode/settings.json
+.vscode/launch.json
+*.sublime-workspace
+
+# Local Vercel CLI
+.vercel/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Yarn
+yarn-error.log
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# turbo
+.turbo/
+
+# Project specific
+SETUP.md
+BUILD_GUIDE.md
+implementation_plan.md
+task.md
+MEMORY.md
+.claude/
+.agent/
+VERCEL_SETUP.md
+QUICK_START.md
+PRD.md
+GITHUB_SETUP.md
+DEPLOYMENT_CHECKLIST.md
+claude_instructions_from_chat.md

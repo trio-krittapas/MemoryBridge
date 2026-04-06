@@ -1,0 +1,9 @@
+fastapi==0.110.0
+uvicorn==0.29.0
+openai-whisper
+spacy==3.7.4
+nltk==3.8.1
+opensmile==2.5.0
+torch
+torchaudio
+

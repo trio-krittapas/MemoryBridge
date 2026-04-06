@@ -1,0 +1,196 @@
+{
+  "en": {
+    "dashboard": {
+      "title": "Dashboard",
+      "subtitle": "Monitoring cognitive health for",
+      "vitality": "Current Vitality",
+      "wellness_score": "WELLNESS SCORE",
+      "ai_insight": "AI Daily Insight",
+      "last_14_days": "Last 14 Days",
+      "stable": "Optimal Performance",
+      "monitor": "Under Monitoring",
+      "declining": "Consulting Required",
+      "activity": "Social Engagement Volume",
+      "speech": "Speech Rate Stability",
+      "exercises": "Exercise Performance"
+    },
+    "chat": {
+      "placeholder": "Talk to me...",
+      "listening": "I'm listening...",
+      "processing": "Thinking...",
+      "welcome": "Good morning! How are you today?",
+      "music_playing": "Music is playing...",
+      "send": "Send"
+    },
+    "exercises": {
+      "title": "Cognitive Gym",
+      "naming": "Object Naming",
+      "recall": "Word Recall",
+      "fluency": "Category Fluency",
+      "start": "START GAME",
+      "well_done": "Well Done!",
+      "description_naming": "Look at the picture and say what you see.",
+      "description_recall": "Remember the words, then recall them later.",
+      "description_fluency": "Name as many items in the category as you can.",
+      "progress_note": "Your progress is shared with your caregiver.",
+      "back": "Back",
+      "try_again": "Try Again",
+      "back_to_menu": "Back to Menu",
+      "need_hint": "Need a hint?",
+      "correct": "Correct!",
+      "incorrect": "Good try!",
+      "score_label": "Score",
+      "your_score": "Your Score"
+    },
+    "nav": {
+      "chat": "Chat",
+      "exercises": "Exercises",
+      "music": "Music"
+    },
+    "playlist": {
+      "title": "Memory Playlist",
+      "subtitle": "Songs that spark memories for your patient.",
+      "connect_spotify": "Connect Spotify",
+      "connected": "Spotify Connected",
+      "add_songs": "Add Songs",
+      "search_placeholder": "Search for a song...",
+      "patient_playlist": "Patient's Playlist",
+      "songs_count": "songs",
+      "no_songs": "No songs yet. Search and add songs above.",
+      "search_button": "Search",
+      "add_button": "Add",
+      "remove_button": "Remove"
+    },
+    "settings": {
+      "title": "Settings",
+      "link_patient": "Link a Patient",
+      "link_description": "Enter the patient's email to connect their account with yours.",
+      "patient_email": "Patient Email",
+      "relationship": "Relationship",
+      "link_button": "Link Patient",
+      "linking": "Linking...",
+      "footer_note": "The patient must already have a MemoryBridge account."
+    },
+    "music_player": {
+      "suggested_title": "Suggested Memory",
+      "suggested_body": "Would you like to listen to this song together?",
+      "maybe_later": "Maybe later",
+      "listen": "Listen"
+    },
+    "daily_recording": {
+      "title": "Good morning! 早上好!",
+      "description": "Would you like to record your daily check-in? It helps track your wellness.",
+      "start": "Start Recording",
+      "maybe_later": "Maybe later",
+      "recording": "Recording",
+      "target": "1:00",
+      "stop_early": "Stop Early",
+      "saving": "Saving your recording...",
+      "done": "Recording saved!"
+    },
+    "errors": {
+      "no_patient_linked": "No patient linked",
+      "no_patient_body": "Go to Settings to link a patient account.",
+      "loading": "Loading...",
+      "save_failed": "Failed to save. Please try again.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "zh": {
+    "dashboard": {
+      "title": "监察面板",
+      "subtitle": "正在监察认知健康：",
+      "vitality": "当前生活力",
+      "wellness_score": "健康评分",
+      "ai_insight": "AI 每日洞察",
+      "last_14_days": "过去 14 天",
+      "stable": "表现稳定",
+      "monitor": "需要留意",
+      "declining": "建议咨询",
+      "activity": "社交参与量",
+      "speech": "语速稳定性",
+      "exercises": "认知练习表现"
+    },
+    "chat": {
+      "placeholder": "跟我说话...",
+      "listening": "正在倾听...",
+      "processing": "正在思考...",
+      "welcome": "早上好！今天感觉怎么样？",
+      "music_playing": "正在播放音乐...",
+      "send": "发送"
+    },
+    "exercises": {
+      "title": "认知健身房",
+      "naming": "物体命名",
+      "recall": "词语回忆",
+      "fluency": "类别流利度",
+      "start": "开始游戏",
+      "well_done": "做得好！",
+      "description_naming": "看图片，说出你看到的东西。",
+      "description_recall": "记住这些词语，稍后回忆。",
+      "description_fluency": "说出你能想到的该类别中的物品。",
+      "progress_note": "您的进度将与护理者共享。",
+      "back": "返回",
+      "try_again": "再试一次",
+      "back_to_menu": "返回菜单",
+      "need_hint": "需要提示吗？",
+      "correct": "正确！",
+      "incorrect": "继续加油！",
+      "score_label": "得分",
+      "your_score": "您的得分"
+    },
+    "nav": {
+      "chat": "聊天",
+      "exercises": "练习",
+      "music": "音乐"
+    },
+    "playlist": {
+      "title": "记忆播放列表",
+      "subtitle": "能唤起患者记忆的歌曲。",
+      "connect_spotify": "连接 Spotify",
+      "connected": "Spotify 已连接",
+      "add_songs": "添加歌曲",
+      "search_placeholder": "搜索歌曲...",
+      "patient_playlist": "患者的播放列表",
+      "songs_count": "首歌曲",
+      "no_songs": "暂无歌曲。请在上方搜索并添加歌曲。",
+      "search_button": "搜索",
+      "add_button": "添加",
+      "remove_button": "删除"
+    },
+    "settings": {
+      "title": "设置",
+      "link_patient": "连接患者",
+      "link_description": "输入患者的电子邮件，将其账户与您的账户关联。",
+      "patient_email": "患者电子邮件",
+      "relationship": "关系",
+      "link_button": "关联患者",
+      "linking": "关联中...",
+      "footer_note": "患者必须已拥有 MemoryBridge 账户。"
+    },
+    "music_player": {
+      "suggested_title": "回忆提示",
+      "suggested_body": "您想一起听这首歌吗？",
+      "maybe_later": "稍后再说",
+      "listen": "听一听"
+    },
+    "daily_recording": {
+      "title": "Good morning! 早上好!",
+      "description": "您想录制今天的日常检查吗？这有助于追踪您的健康状况。",
+      "start": "开始录音",
+      "maybe_later": "稍后再说",
+      "recording": "录音中",
+      "target": "1:00",
+      "stop_early": "提前停止",
+      "saving": "正在保存录音...",
+      "done": "录音已保存！"
+    },
+    "errors": {
+      "no_patient_linked": "尚未连接患者",
+      "no_patient_body": "请前往设置页面关联患者账户。",
+      "loading": "加载中...",
+      "save_failed": "保存失败，请重试。",
+      "generic": "出现错误，请重试。"
+    }
+  }
+}
