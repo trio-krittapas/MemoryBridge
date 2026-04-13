@@ -46,9 +46,24 @@ python/*.pyc
 python/*.egg-info/
 python/dist/
 python/.env
+python/models/
+python/data/
+
+# database migrations
+supabase/migrations/
+supabase/.temp/
+
+# test & dev scripts
+scripts/testLogin.js
+scripts/seedTestUsers.js
+test_browser.js
+dev_output.txt
 
 # IDE
 .idea/
 .vscode/settings.json
+.claude/
 *.swp
 *.swo
+*.sql
+claude_code.json

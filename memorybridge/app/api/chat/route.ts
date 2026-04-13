@@ -90,5 +90,5 @@ export async function POST(req: Request) {
     }
   });
 
-  return (result as any).toDataStreamResponse ? (result as any).toDataStreamResponse() : (result as any).toTextStreamResponse();
+  return result.toTextStreamResponse();
 }

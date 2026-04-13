@@ -69,6 +69,13 @@ python/.pytest_cache/
 python/.coverage
 python/htmlcov/
 
+# ML Models and Training Data
+python/models/
+python/data/
+*.pkl
+*.h5
+*.joblib
+
 # Temporary files
 *.tmp
 *.bak

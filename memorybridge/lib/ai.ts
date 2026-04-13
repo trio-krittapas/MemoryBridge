@@ -1,10 +1,10 @@
-import { createOllama } from 'ollama-ai-provider';
+import { createOllama } from 'ai-sdk-ollama';
 import { createOpenAI } from '@ai-sdk/openai';
 
 const provider = process.env.LLM_PROVIDER || 'ollama';
 
 const ollama = createOllama({
-  baseURL: process.env.OLLAMA_BASE_URL || 'http://localhost:11434/api',
+  baseURL: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
 });
 
 const openai = createOpenAI({

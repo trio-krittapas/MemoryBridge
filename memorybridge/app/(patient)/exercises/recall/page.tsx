@@ -70,18 +70,18 @@ export default function WordRecallExercise() {
   }
 
   const handleRecall = (transcript: string) => {
-    const found = wordSet.filter(word => 
+    const found = wordSet.filter(word =>
       transcript.toLowerCase().includes(word.toLowerCase())
     )
     setRecitedWords(found)
-    
+
     setTimeout(() => {
       setPhase('FINISH')
-      saveScore(found.length)
+      saveScore(found.length, found)
     }, 1500)
   }
 
-  const saveScore = async (count: number) => {
+  const saveScore = async (count: number, recalled: string[] = []) => {
     try {
       const response = await fetch('/api/exercises/score', {
         method: 'POST',
@@ -90,7 +90,7 @@ export default function WordRecallExercise() {
           exerciseType: 'word_recall',
           score: count,
           maxScore: wordSet.length,
-          details: { presented: wordSet, recalled: recitedWords }
+          details: { presented: wordSet, recalled }
         }),
       })
 

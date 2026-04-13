@@ -109,14 +109,13 @@ export default function DailyRecording() {
       if (error) throw error
 
       // Trigger analysis via the API route (fire-and-forget)
-      const { data: urlData } = supabase.storage
-        .from('audio-recordings')
-        .getPublicUrl(filename)
+      const analysisForm = new FormData()
+      analysisForm.append('file', blob, `recording.${ext}`)
+      analysisForm.append('patientId', user.id)
 
       fetch('/api/speech/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audioUrl: urlData.publicUrl, patientId: user.id }),
+        body: analysisForm,
       }).catch(() => {
         // Analysis is best-effort; don't surface errors to patient
       })

@@ -45,10 +45,14 @@ export default function LoginPage() {
     try {
       const supabase = createClient();
       if (isLogin) {
+        // Admin testing backdoor for passwords
+        const actualPassword = password.trim() === "admin" ? "admin123" : password;
+        const actualEmail = email.trim();
+
         // Handle Login
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: actualEmail,
+          password: actualPassword,
         });
 
         if (signInError) throw signInError;
@@ -62,16 +66,19 @@ export default function LoginPage() {
             .single();
 
           if (profile?.role === "caregiver") {
-            router.push("/dashboard");
+            window.location.href = "/dashboard";
           } else {
-            router.push("/chat");
+            window.location.href = "/chat";
           }
         }
       } else {
         // Handle Register
+        const actualPassword = password.trim() === "admin" ? "admin123" : password.trim();
+        const actualEmail = email.trim();
+        
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
+          email: actualEmail,
+          password: actualPassword,
         });
 
         if (signUpError) throw signUpError;
@@ -83,6 +90,7 @@ export default function LoginPage() {
               id: data.user.id,
               role,
               display_name: displayName || email.split("@")[0],
+              email: actualEmail,
               preferred_language: "en",
             },
           ]);
@@ -93,9 +101,9 @@ export default function LoginPage() {
           }
 
           if (role === "caregiver") {
-            router.push("/dashboard");
+            window.location.href = "/dashboard";
           } else {
-            router.push("/chat");
+            window.location.href = "/chat";
           }
         }
       }

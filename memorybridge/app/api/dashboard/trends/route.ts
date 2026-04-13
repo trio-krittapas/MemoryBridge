@@ -18,18 +18,18 @@ export async function GET(req: Request) {
     // 1. Fetch Cognitive Scores (Speech Metrics)
     const { data: cognitiveData } = await supabase
       .from('cognitive_scores')
-      .select('*')
+      .select('wellness_score, recorded_at, created_at')
       .eq('patient_id', userId)
-      .gte('created_at', startDate)
-      .order('created_at', { ascending: true });
+      .gte('recorded_at', startDate)
+      .order('recorded_at', { ascending: true });
 
     // 2. Fetch Exercise Scores
     const { data: exerciseData } = await supabase
       .from('exercise_scores')
-      .select('*')
+      .select('score, max_score, completed_at')
       .eq('patient_id', userId)
-      .gte('created_at', startDate)
-      .order('created_at', { ascending: true });
+      .gte('completed_at', startDate)
+      .order('completed_at', { ascending: true });
 
     // 3. Fetch Interaction Counts (Chat)
     const { data: chatData } = await supabase
@@ -49,17 +49,18 @@ export async function GET(req: Request) {
     }
 
     cognitiveData?.forEach(row => {
-        const d = format(new Date(row.created_at), 'yyyy-MM-dd');
+        const d = format(new Date(row.recorded_at ?? row.created_at), 'yyyy-MM-dd');
         if (trendData[d]) {
-            trendData[d].speech = row.overall_score || 0;
+            trendData[d].speech = row.wellness_score || 0;
         }
     });
 
     exerciseData?.forEach(row => {
-        const d = format(new Date(row.created_at), 'yyyy-MM-dd');
+        const d = format(new Date(row.completed_at), 'yyyy-MM-dd');
         if (trendData[d]) {
-            trendData[d].exercises = (trendData[d].exercises * trendData[d].count + row.score) / (trendData[d].count + 1);
+            const pct = row.max_score > 0 ? (row.score / row.max_score) * 100 : row.score;
             trendData[d].count++;
+            trendData[d].exercises = trendData[d].exercises + (pct - trendData[d].exercises) / trendData[d].count;
         }
     });
 

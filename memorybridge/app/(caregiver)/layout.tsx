@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
-import { LayoutDashboard, BookText, Music, Settings, User } from "lucide-react";
+import { LayoutDashboard, BookText, Music, Settings, User, HeartPulse } from "lucide-react";
+import { LogoutButton } from "@/components/caregiver/LogoutButton";
 
 export default function CaregiverLayout({
   children,
@@ -10,6 +11,7 @@ export default function CaregiverLayout({
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Life Story Profile", href: "/profile", icon: BookText },
+    { name: "Health Profile", href: "/health", icon: HeartPulse },
     { name: "Playlist", href: "/playlist", icon: Music },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
@@ -44,8 +46,9 @@ export default function CaregiverLayout({
           </ul>
         </nav>
 
-        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-col gap-3">
+          <LogoutButton />
+          <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium px-3">
             MemoryBridge v1.0
           </div>
         </div>

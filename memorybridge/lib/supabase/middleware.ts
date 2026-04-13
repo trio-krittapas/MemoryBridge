@@ -55,11 +55,11 @@ export async function updateSession(request: NextRequest) {
     const role = profile?.role || 'patient';
     
     const isCaregiverRoute = [
-      '/dashboard', '/profile', '/playlist', '/settings'
+      '/dashboard', '/profile', '/playlist', '/settings', '/health',
     ].some(r => request.nextUrl.pathname.startsWith(r));
-    
+
     const isPatientRoute = [
-      '/chat', '/exercises', '/music'
+      '/chat', '/exercises', '/music', '/speech',
     ].some(r => request.nextUrl.pathname.startsWith(r));
 
     // Redirect logged-in users away from login/landing to their respective homes

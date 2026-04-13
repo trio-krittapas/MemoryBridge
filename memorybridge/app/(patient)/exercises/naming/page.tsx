@@ -7,7 +7,7 @@ import { VoiceInput } from '@/components/chat/VoiceInput'
 import { useLanguage } from '@/components/shared/LanguageContext'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { ChevronRight, RefreshCw, Trophy, Target, ArrowLeft } from 'lucide-react'
+import { ChevronRight, RefreshCw, Trophy, Target, ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -140,6 +140,14 @@ export default function NamingExercise() {
     )
   }
 
+  if (!currentItem) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
+      </div>
+    )
+  }
+
   return (
     <div className="container max-w-lg py-10 space-y-10 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
@@ -151,7 +159,7 @@ export default function NamingExercise() {
         </Link>
         <div className="flex items-center gap-2 bg-zinc-100 px-4 py-2 rounded-full font-bold text-zinc-600">
           <Target className="h-4 w-4" />
-          {currentIndex + 1} / {TEST_IMAGES.length}
+          {currentIndex + 1} / {images.length}
         </div>
       </div>
 
