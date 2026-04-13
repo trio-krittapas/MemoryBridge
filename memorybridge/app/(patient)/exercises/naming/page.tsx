@@ -37,23 +37,29 @@ export default function NamingExercise() {
 
   useEffect(() => {
     async function loadDifficultyAndItems() {
+      let currentDiff = 1
+
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (user) {
+        const { data: previousScores } = await supabase
+          .from('exercise_scores')
+          .select('difficulty_level')
+          .eq('patient_id', user.id)
+          .eq('exercise_type', 'object_naming')
+          .order('completed_at', { ascending: false })
+          .limit(1)
 
-      const { data: previousScores } = await supabase
-        .from('exercise_scores')
-        .select('difficulty_level')
-        .eq('patient_id', user.id)
-        .eq('exercise_type', 'object_naming')
-        .order('completed_at', { ascending: false })
-        .limit(1)
+        if (previousScores && previousScores.length > 0) {
+          currentDiff = previousScores[0].difficulty_level
+        }
+      }
 
-      const currentDiff = previousScores && previousScores.length > 0 ? previousScores[0].difficulty_level : 1
       setDifficulty(currentDiff)
 
       // Get 4 images close to current difficulty
       const filtered = TEST_IMAGES.filter(img => Math.abs(img.difficulty - currentDiff) <= 1)
-      const shuffled = filtered.sort(() => 0.5 - Math.random()).slice(0, 4)
+      const pool = filtered.length >= 4 ? filtered : TEST_IMAGES
+      const shuffled = pool.sort(() => 0.5 - Math.random()).slice(0, 4)
       setImages(shuffled)
     }
 
