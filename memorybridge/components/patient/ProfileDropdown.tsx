@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -110,11 +110,16 @@ export function ProfileDropdown() {
       setHeightCm(p.height_cm != null ? String(p.height_cm) : "");
       setWeightKg(p.weight_kg != null ? String(p.weight_kg) : "");
     } catch {
-      toast.error("Could not load profile data.");
+      // Silently fail — avatar will show "?" until sheet is opened
     } finally {
       setLoading(false);
     }
   }, [profile]);
+
+  // Load on mount so the avatar shows initials immediately (not "?")
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);

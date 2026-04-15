@@ -3,6 +3,31 @@ import { createClient } from '@/lib/supabase/server';
 
 const PYTHON_SIDECAR_URL = process.env.PYTHON_SIDECAR_URL || 'http://localhost:8000';
 
+function coerceTopRiskFactors(value: unknown): string[] {
+  const normalizeArray = (items: unknown[]) =>
+    items
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+  if (Array.isArray(value)) {
+    return normalizeArray(value);
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return normalizeArray(parsed);
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
 // ── GET: fetch existing health data for the caregiver's linked patient ────
 export async function GET() {
   try {
@@ -27,9 +52,14 @@ export async function GET() {
 
     if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows
 
-    return NextResponse.json({ data: data ?? null });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const normalizedData = data
+      ? { ...data, top_risk_factors: coerceTopRiskFactors(data.top_risk_factors) }
+      : null;
+
+    return NextResponse.json({ data: normalizedData });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -90,7 +120,12 @@ export async function POST(req: Request) {
       Forgetfulness:             body.forgetfulness,
     };
 
-    let prediction = { risk_score: null, risk_label: null, risk_description: null, top_risk_factors: null };
+    let prediction: {
+      risk_score: number | null;
+      risk_label: string | null;
+      risk_description: string | null;
+      top_risk_factors: unknown;
+    } = { risk_score: null, risk_label: null, risk_description: null, top_risk_factors: null };
 
     try {
       const sidecarRes = await fetch(`${PYTHON_SIDECAR_URL}/predict`, {
@@ -108,6 +143,8 @@ export async function POST(req: Request) {
       // Don't block save if sidecar is down — just store without prediction
       console.warn('Prediction sidecar unreachable:', sidecarErr);
     }
+
+    const normalizedTopRiskFactors = coerceTopRiskFactors(prediction.top_risk_factors);
 
     // ── 2. Upsert into Supabase (one record per patient) ──────────────────
     const { data, error } = await supabase
@@ -150,7 +187,7 @@ export async function POST(req: Request) {
           risk_score:                  prediction.risk_score,
           risk_label:                  prediction.risk_label,
           risk_description:            prediction.risk_description,
-          top_risk_factors:            prediction.top_risk_factors,
+          top_risk_factors:            normalizedTopRiskFactors,
           updated_at:                  new Date().toISOString(),
         },
         { onConflict: 'patient_id' }
@@ -160,9 +197,13 @@ export async function POST(req: Request) {
 
     if (error) throw error;
 
-    return NextResponse.json({ data, prediction });
-  } catch (error: any) {
+    return NextResponse.json({
+      data: { ...data, top_risk_factors: normalizedTopRiskFactors },
+      prediction: { ...prediction, top_risk_factors: normalizedTopRiskFactors },
+    });
+  } catch (error: unknown) {
     console.error('Health data API error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

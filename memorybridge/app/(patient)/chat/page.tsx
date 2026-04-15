@@ -11,6 +11,7 @@ import { SendIcon, Music } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { VoiceInput } from '@/components/chat/VoiceInput';
 import { useLanguage } from '@/components/shared/LanguageContext';
+import { useTranslation } from '@/hooks/useTranslation';
 import { createClient } from '@/lib/supabase/client';
 import MusicPlayer from '@/components/chat/MusicPlayer';
 import DailyRecording from '@/components/chat/DailyRecording';
@@ -24,6 +25,7 @@ interface SongSuggestion {
 
 export default function ChatPage() {
   const { language } = useLanguage();
+  const t = useTranslation();
   const [isInitializing, setIsInitializing] = useState(true);
   const { state, setSuggesting, reset } = useMusicStore();
 
@@ -37,7 +39,7 @@ export default function ChatPage() {
       language
     }
   } as any) as any;
-  const { messages, setMessages, input, handleInputChange, handleSubmit, append, isLoading } = chatConfig;
+  const { messages, setMessages, input, handleInputChange, handleSubmit, append, isLoading, error } = chatConfig;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastProcessedMessageId = useRef<string | null>(null);
@@ -87,7 +89,7 @@ export default function ChatPage() {
       // Handle [SUGGEST_SONG:]
       const suggestMatch = lastMessage.content.match(/\[SUGGEST_SONG:(.*?)\|?(.*?)\]/);
       if (suggestMatch) {
-        setSongSuggestion({ name: suggestMatch[1], artist: suggestMatch[2] ?? '' });
+        setSongSuggestion({ name: suggestMatch[1].trim(), artist: suggestMatch[2]?.trim() ?? '' });
         setSuggestionRequested(false);
         lastProcessedMessageId.current = lastMessage.id;
       }
@@ -123,14 +125,14 @@ export default function ChatPage() {
       });
       if (!res.ok) throw new Error('Request failed');
       setSuggestionRequested(true);
-      toast.success('Song requested! Your caregiver will review it.');
+      toast.success(t('chat.request_success'));
       // Hide card after a short delay
       setTimeout(() => {
         setSongSuggestion(null);
         setSuggestionRequested(false);
       }, 2000);
     } catch {
-      toast.error('Could not submit your request. Please try again.');
+      toast.error(t('chat.request_error'));
     }
   }
 
@@ -144,11 +146,12 @@ export default function ChatPage() {
     return content
       .replace(/\[PLAY_SONG:.*?\]/g, '')
       .replace(/\[SUGGEST_SONG:.*?\]/g, '')
+      .replace(/\[\w+_SONG:.*?\]/g, '') // Generic fallback for any future song tags
       .trim();
   }
 
   if (isInitializing) {
-    return <div className="flex h-screen items-center justify-center p-4">Loading...</div>;
+    return <div className="flex h-screen items-center justify-center p-4">{t('errors.loading')}</div>;
   }
 
   // Determine whether to show the suggestion card (only after the last assistant message)
@@ -164,7 +167,7 @@ export default function ChatPage() {
           <div className="flex flex-col gap-6 w-full" ref={scrollRef}>
             {messages.length === 0 && (
               <div className="flex justify-center h-full items-center text-zinc-500">
-                <p className="text-2xl text-center">Hello! How are you doing today?</p>
+                <p className="text-2xl text-center">{t('chat.welcome')}</p>
               </div>
             )}
             {messages.filter((m: any) => m.role !== 'system').map((m: any) => (
@@ -207,7 +210,7 @@ export default function ChatPage() {
                               )}
                             </p>
                             <p className="text-sm text-zinc-500 mt-0.5">
-                              Would you like to add this to your playlist request?
+                              {t('chat.suggestion_prompt')}
                             </p>
                           </div>
                         </div>
@@ -215,7 +218,7 @@ export default function ChatPage() {
                         {/* Actions */}
                         {suggestionRequested ? (
                           <p className="text-sm font-semibold text-green-600 pl-12">
-                            Requested \u2713
+                            {t('chat.requested')} \u2713
                           </p>
                         ) : (
                           <div className="flex gap-2 pl-12">
@@ -224,7 +227,7 @@ export default function ChatPage() {
                               onClick={handleSongRequest}
                               className="h-9 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm shadow-sm"
                             >
-                              Request Song
+                              {t('chat.request_song')}
                             </Button>
                             <Button
                               size="sm"
@@ -232,7 +235,7 @@ export default function ChatPage() {
                               onClick={handleDismissSuggestion}
                               className="h-9 px-4 rounded-xl text-zinc-500 hover:text-zinc-700 font-semibold text-sm"
                             >
-                              No thanks
+                              {t('chat.no_thanks')}
                             </Button>
                           </div>
                         )}
@@ -244,8 +247,15 @@ export default function ChatPage() {
             {isLoading && (
               <div className="w-full flex justify-start">
                <div className="max-w-[85%] rounded-2xl p-4 md:p-6 bg-zinc-100 rounded-bl-sm animate-pulse border-2 border-zinc-200">
-                 Thinking...
+                 {t('chat.processing')}
                </div>
+              </div>
+            )}
+            {error && (
+              <div className="w-full flex justify-start">
+                <div className="max-w-[85%] rounded-2xl p-4 md:p-6 bg-red-50 text-red-700 border-2 border-red-200 text-lg font-medium">
+                  Sorry, I couldn&apos;t respond just now. Please check that the chat service is running and try again.
+                </div>
               </div>
             )}
           </div>
@@ -266,7 +276,7 @@ export default function ChatPage() {
         <Input
           value={input}
           onChange={handleInputChange}
-          placeholder={state === 'PLAYING' ? "Music is playing..." : "Type a message..."}
+          placeholder={state === 'PLAYING' ? t('chat.music_playing') : t('chat.placeholder')}
           disabled={state === 'PLAYING'}
           className="flex-1 text-lg md:text-lg h-14 md:h-16 rounded-2xl border-2 border-amber-900/20 shadow-sm px-6"
         />
@@ -279,7 +289,7 @@ export default function ChatPage() {
           className="h-14 w-14 md:h-16 md:w-16 rounded-2xl shadow-sm bg-amber-600 hover:bg-amber-700 shrink-0"
         >
           <SendIcon className="h-6 w-6 md:h-8 md:w-8 text-white" />
-          <span className="sr-only">Send</span>
+          <span className="sr-only">{t('chat.send')}</span>
         </Button>
       </form>
 

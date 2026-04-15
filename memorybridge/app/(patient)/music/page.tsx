@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { createClient } from '@/lib/supabase/client'
 import { Music, Play, Loader2, Disc, Send } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslation } from '@/hooks/useTranslation'
 
 type RequestStatus = 'pending' | 'approved' | 'dismissed'
 
@@ -19,22 +20,14 @@ interface SongRequest {
   requested_at: string
 }
 
-const STATUS_CONFIG: Record<RequestStatus, { label: string; classes: string }> = {
-  pending: {
-    label: 'Pending...',
-    classes: 'bg-amber-100 text-amber-700 border border-amber-200',
-  },
-  approved: {
-    label: 'Added to Playlist \u2713',
-    classes: 'bg-green-100 text-green-700 border border-green-200',
-  },
-  dismissed: {
-    label: 'Not Available',
-    classes: 'bg-zinc-100 text-zinc-500 border border-zinc-200',
-  },
+const STATUS_CLASSES: Record<RequestStatus, string> = {
+  pending: 'bg-amber-100 text-amber-700 border border-amber-200',
+  approved: 'bg-green-100 text-green-700 border border-green-200',
+  dismissed: 'bg-zinc-100 text-zinc-500 border border-zinc-200',
 }
 
 export default function MusicTherapyPage() {
+  const t = useTranslation()
   const [playlist, setPlaylist] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [playingTrack, setPlayingTrack] = useState<string | null>(null)
@@ -105,9 +98,9 @@ export default function MusicTherapyPage() {
       setRequests((prev) => [newRequest, ...prev])
       setTrackName('')
       setArtist('')
-      toast.success('Song requested! Your caregiver will review it.')
+      toast.success(t('music_therapy.request_success'))
     } catch {
-      toast.error('Could not submit your request. Please try again.')
+      toast.error(t('music_therapy.request_error'))
     } finally {
       setRequesting(false)
     }
@@ -128,8 +121,8 @@ export default function MusicTherapyPage() {
         <div className="mx-auto w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center shadow-sm">
           <Music className="h-10 w-10 text-amber-600" />
         </div>
-        <h1 className="text-3xl font-black tracking-tight text-zinc-900">Music Therapy</h1>
-        <p className="text-lg text-zinc-500 font-medium">Songs to bring back beautiful memories.</p>
+        <h1 className="text-3xl font-black tracking-tight text-zinc-900">{t('music_therapy.title')}</h1>
+        <p className="text-lg text-zinc-500 font-medium">{t('music_therapy.subtitle')}</p>
       </div>
 
       {/* Tabs */}
@@ -139,13 +132,13 @@ export default function MusicTherapyPage() {
             value="playlist"
             className="flex-1 h-full rounded-xl text-base font-semibold data-active:bg-amber-600 data-active:text-white data-active:shadow-sm transition-all"
           >
-            My Playlist
+            {t('music_therapy.tab_playlist')}
           </TabsTrigger>
           <TabsTrigger
             value="request"
             className="flex-1 h-full rounded-xl text-base font-semibold data-active:bg-amber-600 data-active:text-white data-active:shadow-sm transition-all"
           >
-            Request a Song
+            {t('music_therapy.tab_request')}
           </TabsTrigger>
         </TabsList>
 
@@ -154,7 +147,7 @@ export default function MusicTherapyPage() {
           {playlist.length === 0 ? (
             <Card className="bg-zinc-50 border-dashed border-2 p-10 text-center rounded-[2rem]">
               <Disc className="h-12 w-12 text-zinc-300 mx-auto mb-4" />
-              <p className="text-zinc-500">Your playlist is empty right now. Your caregiver can add songs for you!</p>
+              <p className="text-zinc-500">{t('music_therapy.empty_playlist')}</p>
             </Card>
           ) : (
             playlist.map((track) => (
@@ -230,18 +223,18 @@ export default function MusicTherapyPage() {
           {/* Request form */}
           <Card className="rounded-[2rem] border-2 border-amber-100 bg-amber-50/40 overflow-hidden">
             <CardContent className="p-6 md:p-8">
-              <h2 className="text-xl font-bold text-zinc-900 mb-1">Request a Song</h2>
+              <h2 className="text-xl font-bold text-zinc-900 mb-1">{t('music_therapy.request_title')}</h2>
               <p className="text-sm text-zinc-500 mb-6">
-                Your caregiver will be notified and can add it to your playlist.
+                {t('music_therapy.request_subtitle')}
               </p>
               <form onSubmit={handleRequestSubmit} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-zinc-700" htmlFor="track-name">
-                    Song Name <span className="text-amber-600">*</span>
+                    {t('music_therapy.song_name')} <span className="text-amber-600">*</span>
                   </label>
                   <Input
                     id="track-name"
-                    placeholder="e.g. Yesterday"
+                    placeholder={t('music_therapy.song_name_placeholder')}
                     value={trackName}
                     onChange={(e) => setTrackName(e.target.value)}
                     required
@@ -250,11 +243,11 @@ export default function MusicTherapyPage() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-zinc-700" htmlFor="artist">
-                    Artist <span className="text-zinc-400 font-normal">(optional)</span>
+                    {t('music_therapy.artist')} <span className="text-zinc-400 font-normal">({t('music_therapy.optional')})</span>
                   </label>
                   <Input
                     id="artist"
-                    placeholder="e.g. The Beatles"
+                    placeholder={t('music_therapy.artist_placeholder')}
                     value={artist}
                     onChange={(e) => setArtist(e.target.value)}
                     className="h-12 rounded-xl border-2 border-amber-200 bg-white text-base px-4 focus-visible:border-amber-400 focus-visible:ring-amber-200"
@@ -268,12 +261,12 @@ export default function MusicTherapyPage() {
                   {requesting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Sending...
+                      {t('music_therapy.sending')}
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4 mr-2" />
-                      Request
+                      {t('music_therapy.request_button')}
                     </>
                   )}
                 </Button>
@@ -283,7 +276,7 @@ export default function MusicTherapyPage() {
 
           {/* Past requests list */}
           <div className="space-y-3">
-            <h3 className="text-base font-bold text-zinc-700 px-1">Your Past Requests</h3>
+            <h3 className="text-base font-bold text-zinc-700 px-1">{t('music_therapy.past_requests')}</h3>
 
             {requestsLoading ? (
               <div className="flex justify-center py-8">
@@ -291,11 +284,12 @@ export default function MusicTherapyPage() {
               </div>
             ) : requests.length === 0 ? (
               <Card className="bg-zinc-50 border-dashed border-2 p-8 text-center rounded-[2rem]">
-                <p className="text-zinc-400 text-sm">No requests yet. Ask for a song above!</p>
+                <p className="text-zinc-400 text-sm">{t('music_therapy.no_requests')}</p>
               </Card>
             ) : (
               requests.map((req) => {
-                const cfg = STATUS_CONFIG[req.status] ?? STATUS_CONFIG.pending
+                const statusLabel = t(`music_therapy.status.${req.status}`)
+                const statusClasses = STATUS_CLASSES[req.status] ?? STATUS_CLASSES.pending
                 return (
                   <Card
                     key={req.id}
@@ -312,9 +306,9 @@ export default function MusicTherapyPage() {
                         )}
                       </div>
                       <span
-                        className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.classes}`}
+                        className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${statusClasses}`}
                       >
-                        {cfg.label}
+                        {statusLabel}
                       </span>
                     </div>
                   </Card>

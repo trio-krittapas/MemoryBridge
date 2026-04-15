@@ -2,16 +2,56 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getEmbeddingModel } from '@/lib/ai';
 import { embedMany } from 'ai';
+import { checkRateLimit, rateLimitHeaders, rateLimitResponse } from '@/lib/ratelimit';
+
+// Limits: 5 create requests per user per day (this is a heavy, one-time-ish operation)
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Cap total profile text to prevent enormous embedding jobs
+const MAX_PROFILE_TEXT_LENGTH = 20_000; // chars
 
 export async function POST(req: Request) {
   try {
+    // 1. Authenticate
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 2. Rate limit
+    const rl = checkRateLimit(`user:${user.id}:embeddings-create`, RATE_LIMIT, RATE_WINDOW_MS);
+    if (!rl.allowed) return rateLimitResponse(rl);
+
     const { patientId, profileData } = await req.json();
 
     if (!patientId || !profileData) {
       return NextResponse.json({ error: 'Missing patientId or profileData' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    // 3. Ownership check — only allow users to index their own profile
+    if (patientId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // 4. Validate profileData — each field is a string, cap total length
+    if (typeof profileData !== 'object' || Array.isArray(profileData)) {
+      return NextResponse.json({ error: 'profileData must be an object' }, { status: 400 });
+    }
+
+    const totalLength = Object.values(profileData as Record<string, unknown>)
+      .filter((v): v is string => typeof v === 'string')
+      .reduce((sum, s) => sum + s.length, 0);
+
+    if (totalLength > MAX_PROFILE_TEXT_LENGTH) {
+      return NextResponse.json(
+        { error: `Profile text exceeds the ${MAX_PROFILE_TEXT_LENGTH.toLocaleString()} character limit` },
+        { status: 400 },
+      );
+    }
+
     const embeddingModel = getEmbeddingModel();
 
     // 1. Delete old embeddings for this patient
@@ -81,10 +121,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Failed to store context' }, { status: 500 });
     }
 
-    return NextResponse.json({ 
-      message: 'Successfully indexed life story', 
-      chunkCount: chunks.length 
-    });
+    return NextResponse.json(
+      { message: 'Successfully indexed life story', chunkCount: chunks.length },
+      { headers: rateLimitHeaders(rl) },
+    );
 
   } catch (error: any) {
     console.error('Embedding creation error:', error);

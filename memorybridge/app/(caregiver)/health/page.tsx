@@ -54,7 +54,32 @@ interface Prediction {
   risk_score: number;
   risk_label: 'LOW' | 'MODERATE' | 'HIGH';
   risk_description: string;
-  top_risk_factors: string[];
+  top_risk_factors: unknown;
+}
+
+function normalizeTopRiskFactors(value: unknown): string[] {
+  const normalizeArray = (items: unknown[]) =>
+    items
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+  if (Array.isArray(value)) {
+    return normalizeArray(value);
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return normalizeArray(parsed);
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
 }
 
 const DEFAULTS: HealthForm = {
@@ -69,6 +94,7 @@ const DEFAULTS: HealthForm = {
 
 // ── Risk Result Card ──────────────────────────────────────────────────────
 function RiskResultCard({ prediction }: { prediction: Prediction }) {
+  const factors = normalizeTopRiskFactors(prediction.top_risk_factors);
   const config = {
     LOW:      { color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200', icon: CheckCircle, bar: 'bg-emerald-500' },
     MODERATE: { color: 'text-amber-600',   bg: 'bg-amber-50 border-amber-200',     icon: AlertTriangle, bar: 'bg-amber-500' },
@@ -105,11 +131,11 @@ function RiskResultCard({ prediction }: { prediction: Prediction }) {
           </div>
         </div>
 
-        {prediction.top_risk_factors?.length > 0 && (
+        {factors.length > 0 && (
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Top Contributing Factors</p>
             <div className="flex flex-wrap gap-2">
-              {prediction.top_risk_factors.map(f => (
+              {factors.map(f => (
                 <span key={f} className="text-xs px-2 py-1 bg-white border rounded-full text-zinc-700 font-medium">
                   {f.replace(/([A-Z])/g, ' $1').trim()}
                 </span>
@@ -214,6 +240,7 @@ export default function HealthProfilePage() {
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [hasLinkedPatient, setHasLinkedPatient] = useState(true);
 
   const set = (key: keyof HealthForm) => (val: number) =>
     setForm(prev => ({ ...prev, [key]: val }));
@@ -222,8 +249,14 @@ export default function HealthProfilePage() {
   useEffect(() => {
     fetch('/api/patient/health')
       .then(r => r.json())
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        // If the API explicitly returns null data with no error, no patient is linked
+        if (data === null && !error) {
+          setHasLinkedPatient(false);
+          return;
+        }
         if (data) {
+          setHasLinkedPatient(true);
           // Map snake_case DB columns back to camelCase form keys
           setForm({
             age: data.age ?? DEFAULTS.age,
@@ -264,7 +297,7 @@ export default function HealthProfilePage() {
               risk_score: data.risk_score,
               risk_label: data.risk_label,
               risk_description: data.risk_description,
-              top_risk_factors: data.top_risk_factors ?? [],
+              top_risk_factors: normalizeTopRiskFactors(data.top_risk_factors),
             });
           }
         }
@@ -282,15 +315,23 @@ export default function HealthProfilePage() {
         body: JSON.stringify(form),
       });
       const json = await res.json();
+      if (res.status === 404) {
+        toast.error('No patient linked to your account. Please link a patient in Settings first.');
+        return;
+      }
       if (!res.ok) throw new Error(json.error || 'Failed to save');
       if (json.prediction?.risk_score != null) {
-        setPrediction(json.prediction);
+        setPrediction({
+          ...json.prediction,
+          top_risk_factors: normalizeTopRiskFactors(json.prediction.top_risk_factors),
+        });
         toast.success('Health profile saved and risk assessed.');
       } else {
-        toast.success('Health profile saved. Start the Python sidecar to get a risk score.');
+        toast.success('Health profile saved. Risk assessment is currently unavailable — please try again later.');
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save';
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -300,6 +341,26 @@ export default function HealthProfilePage() {
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+      </div>
+    );
+  }
+
+  if (!hasLinkedPatient) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center p-8 text-center space-y-6">
+        <div className="bg-zinc-100 p-8 rounded-full mb-4">
+          <Brain className="h-16 w-16 text-zinc-300" />
+        </div>
+        <h2 className="text-2xl font-bold">No Patient Linked</h2>
+        <p className="text-zinc-500 max-w-sm">
+          Please link a patient account in Settings before filling in the health profile.
+        </p>
+        <a
+          href="/settings"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+        >
+          Go to Settings
+        </a>
       </div>
     );
   }
@@ -314,8 +375,7 @@ export default function HealthProfilePage() {
             <h1 className="text-2xl font-bold tracking-tight">Patient Health Profile</h1>
           </div>
           <p className="text-sm text-zinc-500">
-            Fill in your loved one's health information. This data is used by our ML model
-            to assess Alzheimer's risk based on the validated Alzheimer's Disease Dataset.
+            Fill in your loved one&apos;s health information to help monitor their cognitive wellbeing. This information is used to generate a personalised health risk assessment.
           </p>
         </div>
         <Button onClick={handleSave} disabled={saving} className="shrink-0">
@@ -416,14 +476,14 @@ export default function HealthProfilePage() {
       </Section>
 
       {/* ── Cognitive Assessments ── */}
-      <Section title="Cognitive Assessments" description="Scores from standardised cognitive tests (ask the patient's doctor if unsure).">
-        <Field label="MMSE Score (0–30)">
+      <Section title="Cognitive Assessment Scores" description="Scores from your loved one&apos;s recent check-up (ask their doctor if unsure).">
+        <Field label="Memory & Thinking Score (0–30)">
           <NumField value={form.mmse} onChange={set('mmse')} min={0} max={30} unit="/ 30" />
         </Field>
-        <Field label="Functional Assessment (0–10)">
+        <Field label="Daily Functioning Score (0–10)">
           <NumField value={form.functionalAssessment} onChange={set('functionalAssessment')} min={0} max={10} step={0.5} unit="/ 10" />
         </Field>
-        <Field label="ADL Score (0–10)">
+        <Field label="Activities of Daily Living (0–10)">
           <NumField value={form.adl} onChange={set('adl')} min={0} max={10} step={0.5} unit="/ 10" />
         </Field>
       </Section>

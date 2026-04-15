@@ -2,18 +2,60 @@ import { streamText } from 'ai';
 import { getModel } from '@/lib/ai';
 import { SYSTEM_PROMPT } from '@/lib/prompts/system';
 import { createClient } from '@/lib/supabase/server';
+import { checkRateLimit, rateLimitHeaders, rateLimitResponse } from '@/lib/ratelimit';
+import { NextResponse } from 'next/server';
 
 export const maxDuration = 30;
 
-export async function POST(req: Request) {
-  const { messages, language } = await req.json();
+// Limits: 20 chat messages per user per hour
+const RATE_LIMIT = 20;
+const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
+// Input guardrails
+const MAX_MESSAGES = 40;          // max conversation history entries
+const MAX_MESSAGE_LENGTH = 2000;  // chars per individual message
+
+export async function POST(req: Request) {
+  // 1. Authenticate — reject unauthenticated requests immediately
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // 2. Rate limiting (per authenticated user)
+  const rl = checkRateLimit(`user:${user.id}:chat`, RATE_LIMIT, RATE_WINDOW_MS);
+  if (!rl.allowed) return rateLimitResponse(rl);
+
+  // 3. Parse & validate body
+  let messages: any[], language: string | undefined;
+  try {
+    ({ messages, language } = await req.json());
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return NextResponse.json({ error: 'messages must be a non-empty array' }, { status: 400 });
+  }
+
+  // Clamp history length to prevent massive token payloads
+  if (messages.length > MAX_MESSAGES) {
+    messages = messages.slice(-MAX_MESSAGES);
+  }
+
+  // Truncate oversized message content
+  messages = messages.map((m: any) => ({
+    ...m,
+    content: typeof m.content === 'string' && m.content.length > MAX_MESSAGE_LENGTH
+      ? m.content.slice(0, MAX_MESSAGE_LENGTH)
+      : m.content,
+  }));
+
   // 0. Fetch Playlist Information
   let playlistContext = '';
-  if (user) {
+  {
     const { data: playlists } = await supabase
       .from('memory_playlist')
       .select('spotify_track_id, track_name, artist, associated_memory')
@@ -31,11 +73,20 @@ export async function POST(req: Request) {
 
   const model = getModel() as any;
 
+  // 1. Current Date Context
+  const currentDate = new Date().toLocaleDateString('en-SG', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  const dateContext = `\n\nToday's date is ${currentDate}.`;
+
   // 1. RAG Search Logic
   let ragContext = '';
   const lastMessage = messages[messages.length - 1];
-  
-  if (user && lastMessage?.role === 'user' && lastMessage.content.split(' ').length > 5) {
+
+  if (lastMessage?.role === 'user' && lastMessage.content.split(' ').length > 5) {
     try {
       const { embed } = await import('ai');
       const { getEmbeddingModel } = await import('@/lib/ai');
@@ -62,7 +113,7 @@ export async function POST(req: Request) {
   }
 
   // 2. Save the latest user message
-  if (user && lastMessage?.role === 'user') {
+  if (lastMessage?.role === 'user') {
     await supabase.from('chat_messages').insert({
       patient_id: user.id,
       role: 'user',
@@ -71,24 +122,46 @@ export async function POST(req: Request) {
     });
   }
 
-  const result = streamText({
-    model,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT + languageContext + ragContext + playlistContext },
-      ...messages
-    ],
-    async onFinish({ text }) {
-      if (user) {
+  let result;
+  try {
+    result = streamText({
+      model,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT + dateContext + languageContext + ragContext + playlistContext },
+        ...messages
+      ],
+      async onFinish({ text }) {
         await supabase.from('chat_messages').insert({
           patient_id: user.id,
           role: 'assistant',
           content: text,
           language: language || null,
-          metadata: ragContext ? { rag_used: true } : null
+          metadata: ragContext ? { rag_used: true } : null,
         });
-      }
-    }
-  });
+      },
+    });
+  } catch (err: any) {
+    // Catch connection errors (e.g. Ollama not running)
+    const isConnectionError =
+      err?.cause?.code === 'ECONNREFUSED' ||
+      err?.message?.includes('ECONNREFUSED') ||
+      err?.message?.includes('fetch failed') ||
+      err?.message?.includes('connect ECONNREFUSED');
 
-  return result.toTextStreamResponse();
+    if (isConnectionError) {
+      console.error('LLM provider unreachable:', err?.message);
+      return NextResponse.json(
+        { error: 'The chat service is currently unavailable. Please ensure Ollama is running, or contact support.' },
+        { status: 503 }
+      );
+    }
+    console.error('streamText error:', err);
+    return NextResponse.json({ error: 'Failed to generate response. Please try again.' }, { status: 500 });
+  }
+
+  // Attach rate-limit headers to the streaming response
+  const response = result.toTextStreamResponse();
+  const headers = new Headers(response.headers);
+  Object.entries(rateLimitHeaders(rl)).forEach(([k, v]) => headers.set(k, v));
+  return new Response(response.body, { status: response.status, headers });
 }

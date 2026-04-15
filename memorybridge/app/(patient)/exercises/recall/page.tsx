@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { VoiceInput } from '@/components/chat/VoiceInput'
 import { useLanguage } from '@/components/shared/LanguageContext'
+import { useTranslation } from '@/hooks/useTranslation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { ChevronRight, RefreshCw, Trophy, Brain, ArrowLeft, Volume2 } from 'lucide-react'
@@ -18,12 +19,14 @@ const WORD_POOL = [
 
 export default function WordRecallExercise() {
   const { language } = useLanguage()
+  const t = useTranslation()
   const [phase, setPhase] = useState<'PRESENT' | 'DELAY' | 'RECALL' | 'FINISH'>('PRESENT')
   const [wordSet, setWordSet] = useState<string[]>([])
   const [recitedWords, setRecitedWords] = useState<string[]>([])
   const [timer, setTimer] = useState(10)
-  const [difficulty, setDifficulty] = useState(1)
-  
+  const [maxTimer, setMaxTimer] = useState(10)
+  const [, setDifficulty] = useState(1)
+
   const supabase = createClient()
 
   useEffect(() => {
@@ -45,10 +48,11 @@ export default function WordRecallExercise() {
       // Difficulty impacts number of words (3 to 7) and timer (10 to 30)
       const wordCount = 2 + currentDiff
       const delayTime = 5 + (currentDiff * 5)
-      
+
       const shuffled = [...WORD_POOL].sort(() => 0.5 - Math.random())
       setWordSet(shuffled.slice(0, wordCount))
       setTimer(delayTime)
+      setMaxTimer(delayTime)
     }
 
     loadDifficultyAndWords()
@@ -109,8 +113,12 @@ export default function WordRecallExercise() {
           <div className="mx-auto w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center">
             <Trophy className="h-12 w-12 text-emerald-600" />
           </div>
-          <h1 className="text-4xl font-bold">Excellent Recall!</h1>
-          <p className="text-xl text-zinc-500">You remembered {recitedWords.length} out of {wordSet.length} words.</p>
+          <h1 className="text-4xl font-bold">{t('exercises.excellent_recall')}</h1>
+          <p className="text-xl text-zinc-500">
+            {t('exercises.remembered_out_of')
+              .replace('{count}', String(recitedWords.length))
+              .replace('{total}', String(wordSet.length))}
+          </p>
         </div>
 
         <div className="grid gap-4">
@@ -125,11 +133,11 @@ export default function WordRecallExercise() {
         <div className="flex flex-col gap-4">
           <Button size="lg" className="h-16 text-xl rounded-2xl bg-emerald-600" onClick={() => window.location.reload()}>
             <RefreshCw className="mr-2 h-6 w-6" />
-            Try Again
+            {t('exercises.try_again')}
           </Button>
           <Link href="/exercises">
             <Button variant="outline" size="lg" className="h-16 text-xl rounded-2xl w-full">
-              Back to Menu
+              {t('exercises.back_to_menu')}
             </Button>
           </Link>
         </div>
@@ -142,17 +150,17 @@ export default function WordRecallExercise() {
       <Link href="/exercises">
         <Button variant="ghost" size="sm" className="text-zinc-500">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          {t('exercises.back')}
         </Button>
       </Link>
 
       {phase === 'PRESENT' && (
         <div className="text-center space-y-8 py-10 animate-in slide-in-from-top-10">
           <div className="space-y-4">
-            <h1 className="text-3xl font-bold">Remember these words</h1>
-            <p className="text-xl text-zinc-500">Take a deep breath and listen carefully.</p>
+            <h1 className="text-3xl font-bold">{t('exercises.remember_these_words')}</h1>
+            <p className="text-xl text-zinc-500">{t('exercises.take_deep_breath')}</p>
           </div>
-          
+
           <div className="grid gap-6">
             {wordSet.map((word, i) => (
               <Card key={word} className="border-2 border-zinc-100 shadow-lg animate-in zoom-in-95" style={{ animationDelay: `${i * 200}ms` }}>
@@ -164,10 +172,10 @@ export default function WordRecallExercise() {
           <div className="pt-6 space-y-4">
             <Button size="lg" variant="secondary" className="h-16 px-10 rounded-2xl text-xl" onClick={speakWords}>
               <Volume2 className="mr-3 h-8 w-8" />
-              Listen
+              {t('exercises.listen')}
             </Button>
             <Button size="lg" className="h-20 w-full rounded-2xl text-2xl bg-emerald-600" onClick={() => setPhase('DELAY')}>
-              I've got them!
+              {t('exercises.ive_got_them')}
               <ChevronRight className="ml-2 h-8 w-8" />
             </Button>
           </div>
@@ -177,13 +185,27 @@ export default function WordRecallExercise() {
       {phase === 'DELAY' && (
         <div className="text-center space-y-12 py-20 animate-in fade-in">
           <div className="space-y-6">
-            <h1 className="text-3xl font-bold">Wait a moment...</h1>
-            <p className="text-xl text-zinc-500">Try to recall them in your mind while the timer counts down.</p>
+            <h1 className="text-3xl font-bold">{t('exercises.wait_a_moment')}</h1>
+            <p className="text-xl text-zinc-500">{t('exercises.recall_in_mind')}</p>
           </div>
+          {/* SVG countdown arc — depletes as timer counts down */}
           <div className="relative w-48 h-48 mx-auto flex items-center justify-center">
-             <div className="absolute inset-0 border-8 border-zinc-100 rounded-full" />
-             <div className="absolute inset-0 border-8 border-emerald-500 rounded-full border-t-transparent animate-spin-slow" />
-             <span className="text-6xl font-black text-emerald-600">{timer}</span>
+            <svg className="-rotate-90 absolute inset-0" width="192" height="192" viewBox="0 0 192 192">
+              {/* Track */}
+              <circle cx="96" cy="96" r="80" fill="none" stroke="#e4e4e7" strokeWidth="12" />
+              {/* Progress arc */}
+              <circle
+                cx="96" cy="96" r="80"
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="12"
+                strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 80}
+                strokeDashoffset={2 * Math.PI * 80 * (1 - (maxTimer > 0 ? timer / maxTimer : 0))}
+                className="transition-[stroke-dashoffset] duration-1000 ease-linear"
+              />
+            </svg>
+            <span className="text-6xl font-black text-emerald-600">{timer}</span>
           </div>
         </div>
       )}
@@ -191,19 +213,19 @@ export default function WordRecallExercise() {
       {phase === 'RECALL' && (
         <div className="text-center space-y-10 py-10 animate-in slide-in-from-bottom-10">
           <div className="space-y-4">
-            <h1 className="text-3xl font-bold tracking-tight">Now, tell me the words!</h1>
-            <p className="text-xl text-zinc-500">Say all the words you can remember from the list.</p>
+            <h1 className="text-3xl font-bold tracking-tight">{t('exercises.tell_me_words')}</h1>
+            <p className="text-xl text-zinc-500">{t('exercises.say_all_words')}</p>
           </div>
-          
+
           <div className="bg-zinc-100 rounded-3xl p-10 h-40 flex items-center justify-center border-2 border-zinc-200 border-dashed">
              <Brain className="h-16 w-16 text-zinc-300 animate-pulse" />
           </div>
 
           <div className="pt-6">
-            <VoiceInput 
-              onSend={handleRecall} 
-              lang={language === 'en' ? 'en-SG' : 'zh-CN'} 
-              isProcessing={false} 
+            <VoiceInput
+              onSend={handleRecall}
+              lang={language === 'en' ? 'en-SG' : 'zh-CN'}
+              isProcessing={false}
             />
           </div>
         </div>

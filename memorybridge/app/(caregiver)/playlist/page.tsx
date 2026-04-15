@@ -289,6 +289,11 @@ function PlaylistContent() {
   const [token, setToken] = useState<string | null>(null)
   const [requests, setRequests] = useState<SongRequest[]>([])
   const [isLoadingRequests, setIsLoadingRequests] = useState(false)
+  
+  // Manual add state
+  const [manualTitle, setManualTitle] = useState('')
+  const [manualArtist, setManualArtist] = useState('')
+  const [isManualAdding, setIsManualAdding] = useState(false)
 
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -462,6 +467,43 @@ function PlaylistContent() {
     }
   }
 
+  const handleManualAdd = async () => {
+    if (!manualTitle.trim()) return
+    try {
+      setIsManualAdding(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not logged in')
+
+      const { data: rel } = await supabase
+        .from('care_relationships')
+        .select('patient_id')
+        .eq('caregiver_id', user.id)
+        .single()
+
+      if (!rel) throw new Error('No linked patient found')
+
+      const { error } = await supabase
+        .from('memory_playlist')
+        .insert({
+          patient_id: rel.patient_id,
+          track_name: manualTitle.trim(),
+          artist: manualArtist.trim() || 'Unknown',
+          associated_memory: 'Manually added',
+        })
+
+      if (error) throw error
+
+      toast.success('Track added manually!')
+      setManualTitle('')
+      setManualArtist('')
+      loadPlaylist()
+    } catch (err: any) {
+      toast.error('Failed to add track manually: ' + err.message)
+    } finally {
+      setIsManualAdding(false)
+    }
+  }
+
   const loginWithSpotify = async () => {
     const verifier = generateCodeVerifier(128)
     const challenge = await generateCodeChallenge(verifier)
@@ -611,6 +653,46 @@ function PlaylistContent() {
                     </Button>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Manual Add Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Manual Entry</CardTitle>
+              <CardDescription>Add a song that isn't on Spotify</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="manual-title" className="text-xs">Song Title</Label>
+                  <Input
+                    id="manual-title"
+                    placeholder="e.g. Grandma's Favorite Lullaby"
+                    value={manualTitle}
+                    onChange={(e) => setManualTitle(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="manual-artist" className="text-xs">Artist (Optional)</Label>
+                  <Input
+                    id="manual-artist"
+                    placeholder="e.g. Unknown"
+                    value={manualArtist}
+                    onChange={(e) => setManualArtist(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <Button 
+                  onClick={handleManualAdd} 
+                  disabled={!manualTitle.trim() || isManualAdding}
+                  className="w-full bg-zinc-900"
+                >
+                  {isManualAdding ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <PlusCircle className="h-4 w-4 mr-2" />}
+                  Add Manually
+                </Button>
               </div>
             </CardContent>
           </Card>

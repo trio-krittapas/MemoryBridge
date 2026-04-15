@@ -1,5 +1,18 @@
 import Link from "next/link";
-import { Heart, LayoutDashboard, Brain, Music, BarChart2 } from "lucide-react";
+import { Heart, LayoutDashboard, Brain, Music, BarChart2, ChevronRight } from "lucide-react";
+
+// Demo patients shown on the landing page.
+// Each card links to the login page pre-filled with the patient's email.
+const DEMO_PATIENTS = [
+  {
+    name: "John Toh",
+    age: 77,
+    tagline: "Retired teacher & orchid grower",
+    email: "patient@memorybridge.test",
+    initials: "JT",
+    color: "bg-amber-500",
+  },
+];
 
 export default function Home() {
   return (
@@ -32,8 +45,8 @@ export default function Home() {
       </div>
 
       {/* Hero Header */}
-      <header className="relative z-10 flex flex-col items-center justify-center pt-16 pb-10 px-6 text-center">
-        <div className="flex items-center gap-3 mb-4">
+      <header className="relative z-10 flex flex-col items-center justify-center pt-14 pb-8 px-6 text-center">
+        <div className="flex items-center gap-3 mb-3">
           <div className="w-14 h-14 bg-amber-600 rounded-2xl flex items-center justify-center shadow-lg">
             <Heart className="h-8 w-8 text-white fill-white" />
           </div>
@@ -44,41 +57,58 @@ export default function Home() {
         </p>
       </header>
 
-      {/* Role Selection Cards */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pb-10">
-        <div className="flex flex-col sm:flex-row gap-6 w-full max-w-2xl">
+      {/* Main content */}
+      <main className="relative z-10 flex-1 flex flex-col items-center px-6 pb-10 gap-10">
 
-          {/* Patient Card */}
+        {/* Patient Selection */}
+        <section className="w-full max-w-2xl">
+          <p className="text-sm font-semibold uppercase tracking-widest text-amber-700/60 mb-4 text-center">
+            Select a Profile to Continue
+          </p>
+
+          <div className="flex flex-col gap-4">
+            {DEMO_PATIENTS.map((patient) => (
+              <Link
+                key={patient.email}
+                href={`/login?role=patient&email=${encodeURIComponent(patient.email)}`}
+                className="group flex items-center gap-5 p-6 rounded-[2rem] bg-amber-600 hover:bg-amber-700 shadow-2xl hover:shadow-amber-300/60 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              >
+                {/* Avatar */}
+                <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center shrink-0 group-hover:bg-white/30 transition-colors">
+                  <span className="text-2xl font-black text-white">{patient.initials}</span>
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 text-left">
+                  <p className="text-2xl font-black text-white leading-tight">{patient.name}</p>
+                  <p className="text-amber-100 text-base mt-0.5">
+                    Age {patient.age} · {patient.tagline}
+                  </p>
+                </div>
+
+                {/* Arrow */}
+                <ChevronRight className="h-7 w-7 text-white/70 group-hover:text-white shrink-0 transition-colors" />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Caregiver access */}
+        <section className="w-full max-w-2xl flex flex-col items-center gap-3">
+          <div className="w-full border-t border-amber-200" />
+          <p className="text-sm text-amber-700/50 font-medium">Are you a caregiver or family member?</p>
           <Link
-            href="/chat"
-            className="group flex-1 flex flex-col items-center justify-center gap-5 p-10 h-64 rounded-[3rem] bg-amber-600 hover:bg-amber-700 shadow-2xl hover:shadow-amber-300/60 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+            href="/login?role=caregiver"
+            className="group flex items-center gap-3 px-7 py-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
           >
-            <div className="w-20 h-20 bg-white/20 rounded-[1.5rem] flex items-center justify-center group-hover:bg-white/30 transition-colors">
-              <Heart className="h-10 w-10 text-white fill-white" />
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-black text-white">I am the Patient</p>
-              <p className="text-lg text-amber-100 mt-1">Start your daily companion chat</p>
-            </div>
+            <LayoutDashboard className="h-5 w-5 text-zinc-400 group-hover:text-zinc-300 transition-colors" />
+            <span className="text-white font-bold text-base">Sign in as Caregiver</span>
+            <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
           </Link>
+        </section>
 
-          {/* Caregiver Card */}
-          <Link
-            href="/dashboard"
-            className="group flex-1 flex flex-col items-center justify-center gap-5 p-10 h-64 rounded-[3rem] bg-zinc-900 hover:bg-zinc-800 shadow-2xl hover:shadow-zinc-500/30 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
-          >
-            <div className="w-20 h-20 bg-white/10 rounded-[1.5rem] flex items-center justify-center group-hover:bg-white/20 transition-colors">
-              <LayoutDashboard className="h-10 w-10 text-zinc-300" />
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-black text-white">I am a Caregiver</p>
-              <p className="text-lg text-zinc-400 mt-1">Monitor cognitive health &amp; manage care</p>
-            </div>
-          </Link>
-        </div>
-
-        {/* Feature Strip */}
-        <div className="mt-10 flex flex-wrap justify-center gap-3">
+        {/* Feature strip */}
+        <div className="flex flex-wrap justify-center gap-3">
           <span className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-full px-4 py-2 text-sm font-medium shadow-sm">
             <Brain className="h-4 w-4" />
             Daily Companion Chat

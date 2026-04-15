@@ -37,6 +37,18 @@ export default function LoginPage() {
   const [role, setRole] = useState<"caregiver" | "patient">("patient");
   const [error, setError] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const roleParam = searchParams.get("role");
+    const emailParam = searchParams.get("email");
+    if (roleParam === "caregiver" || roleParam === "patient") {
+      setRole(roleParam);
+    }
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+  }, []);
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -57,7 +69,7 @@ export default function LoginPage() {
 
         if (signInError) throw signInError;
 
-        // Redirect based on role
+        // Redirect based on role — with mismatch guard
         if (data.user) {
           const { data: profile } = await supabase
             .from("user_profiles")
@@ -65,7 +77,25 @@ export default function LoginPage() {
             .eq("id", data.user.id)
             .single();
 
-          if (profile?.role === "caregiver") {
+          const dbRole = profile?.role;
+
+          // If the user arrived from a patient card but their account is a caregiver, reject
+          if (role === "patient" && dbRole === "caregiver") {
+            await supabase.auth.signOut();
+            throw new Error(
+              "This account is registered as a caregiver. Please go back and select 'Sign in as Caregiver' to log in."
+            );
+          }
+
+          // If the user arrived from the caregiver link but their account is a patient, reject
+          if (role === "caregiver" && dbRole === "patient") {
+            await supabase.auth.signOut();
+            throw new Error(
+              "This account is registered as a patient. Please go back and select a patient profile to log in."
+            );
+          }
+
+          if (dbRole === "caregiver") {
             window.location.href = "/dashboard";
           } else {
             window.location.href = "/chat";
@@ -137,7 +167,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin && (
+            {!isLogin ? (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="displayName">Display Name</Label>
@@ -157,7 +187,7 @@ export default function LoginPage() {
                     onValueChange={(val: "caregiver" | "patient") => setRole(val)}
                     disabled={isLoading}
                   >
-                    <SelectTrigger id="role">
+                    <SelectTrigger id="role" className="bg-amber-50 border-amber-200">
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -167,6 +197,22 @@ export default function LoginPage() {
                   </Select>
                 </div>
               </>
+            ) : (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">Signing in as</span>
+                  <span className="text-lg font-black text-amber-700 capitalize">{role}</span>
+                </div>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setRole(role === 'patient' ? 'caregiver' : 'patient')}
+                  className="text-xs text-amber-600 hover:text-amber-800 hover:bg-amber-100"
+                >
+                  Change Role
+                </Button>
+              </div>
             )}
 
             <div className="space-y-2">

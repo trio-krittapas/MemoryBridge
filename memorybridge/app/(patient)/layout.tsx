@@ -1,9 +1,8 @@
 import React from "react";
-import Link from "next/link";
-import { MessageSquare, LayoutGrid, Music, Activity } from "lucide-react";
 import { LanguageToggle } from "@/components/shared/LanguageToggle";
 import { LanguageProvider } from "@/components/shared/LanguageContext";
 import { ProfileDropdown } from "@/components/patient/ProfileDropdown";
+import { BottomNav } from "@/components/patient/BottomNav";
 
 export default function PatientLayout({
   children,
@@ -31,47 +30,7 @@ export default function PatientLayout({
           </div>
         </main>
 
-        {/* Bottom Navigation */}
-        <nav className="h-24 shrink-0 border-t border-amber-900/10 bg-[#fdfbf7] shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-10">
-          <ul className="flex items-center justify-around h-full px-4 max-w-lg mx-auto w-full">
-            <li>
-              <Link 
-                href="/chat" 
-                className="flex items-center justify-center p-4 rounded-2xl transition-colors hover:bg-amber-100 active:bg-amber-200"
-                aria-label="Chat"
-              >
-                <MessageSquare className="w-10 h-10 text-amber-800" />
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/exercises" 
-                className="flex items-center justify-center p-4 rounded-2xl transition-colors hover:bg-amber-100 active:bg-amber-200"
-                aria-label="Exercises"
-              >
-                <LayoutGrid className="w-10 h-10 text-amber-800" />
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/music"
-                className="flex items-center justify-center p-4 rounded-2xl transition-colors hover:bg-amber-100 active:bg-amber-200"
-                aria-label="Music Therapy"
-              >
-                <Music className="w-10 h-10 text-amber-800" />
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/speech"
-                className="flex items-center justify-center p-4 rounded-2xl transition-colors hover:bg-amber-100 active:bg-amber-200"
-                aria-label="Daily Check-In"
-              >
-                <Activity className="w-10 h-10 text-amber-800" />
-              </Link>
-            </li>
-          </ul>
-        </nav>
+        <BottomNav />
       </div>
     </LanguageProvider>
   );

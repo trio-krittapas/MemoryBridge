@@ -2,9 +2,26 @@ import { generateText } from 'ai';
 import { getModel } from '@/lib/ai';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { checkRateLimit, rateLimitHeaders, rateLimitResponse } from '@/lib/ratelimit';
+
+// Limits: 5 summary requests per user per hour
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 export async function GET(req: Request) {
   try {
+    // 1. Authenticate
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 2. Rate limit
+    const rl = checkRateLimit(`user:${user.id}:summary`, RATE_LIMIT, RATE_WINDOW_MS);
+    if (!rl.allowed) return rateLimitResponse(rl);
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
 
@@ -12,7 +29,21 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    // 3. Authorization — callers may only fetch summaries they are allowed to view.
+    //    Accept the request if they are fetching their own data, or if they have a
+    //    caregiver link to that patient.
+    if (userId !== user.id) {
+      const { data: link } = await supabase
+        .from('caregiver_patient_links')
+        .select('id')
+        .eq('caregiver_id', user.id)
+        .eq('patient_id', userId)
+        .maybeSingle();
+
+      if (!link) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
     const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     const { data: messages } = await supabase
@@ -41,7 +72,7 @@ export async function GET(req: Request) {
       ${conversationText}`,
     });
 
-    return NextResponse.json({ summary: text });
+    return NextResponse.json({ summary: text }, { headers: rateLimitHeaders(rl) });
 
   } catch (error: any) {
     console.error('Summary error:', error);

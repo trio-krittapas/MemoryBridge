@@ -8,6 +8,7 @@ import { getAccessToken } from '@/lib/spotify/auth'
 import { toast } from 'sonner'
 import { useMusicStore } from '@/lib/spotify/player-state'
 import Image from 'next/image'
+import { useTranslation } from '@/hooks/useTranslation'
 
 declare global {
   interface Window {
@@ -17,6 +18,7 @@ declare global {
 }
 
 export default function MusicPlayer() {
+  const t = useTranslation()
   const { 
     state, 
     currentTrackId, 
@@ -136,16 +138,16 @@ export default function MusicPlayer() {
               <MusicIcon className="h-8 w-8 text-amber-600" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl font-bold text-zinc-900">Suggested Memory</h3>
-              <p className="text-zinc-600">Would you like to listen to this song together?</p>
+              <h3 className="text-xl font-bold text-zinc-900">{t('music_player.suggested_title')}</h3>
+              <p className="text-zinc-600">{t('music_player.suggested_body')}</p>
             </div>
             <div className="flex gap-3 pt-2">
               <Button variant="outline" className="flex-1 rounded-2xl h-12 border-zinc-200" onClick={cancelSuggestion}>
-                Maybe later
+                {t('music_player.maybe_later')}
               </Button>
               <Button className="flex-1 rounded-2xl h-12 bg-amber-600 hover:bg-amber-700 shadow-md" onClick={confirmPlayback}>
                 <Play className="mr-2 h-4 w-4 fill-current" />
-                Listen
+                {t('music_player.listen')}
               </Button>
             </div>
           </CardContent>

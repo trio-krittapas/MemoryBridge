@@ -1,6 +1,63 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function recomputeScoreFromDetails(
+  exerciseType: string,
+  providedScore: number,
+  providedMaxScore: number,
+  details: unknown,
+): { score: number; maxScore: number } {
+  const detailsRecord = typeof details === 'object' && details !== null
+    ? (details as Record<string, unknown>)
+    : {};
+
+  let score = providedScore;
+  let maxScore = providedMaxScore;
+
+  if (exerciseType === 'object_naming') {
+    const attempts = Array.isArray(detailsRecord.attempts) ? detailsRecord.attempts : [];
+    if (attempts.length > 0) {
+      score = attempts.filter((attempt) => {
+        return typeof attempt === 'object'
+          && attempt !== null
+          && (attempt as Record<string, unknown>).isCorrect === true;
+      }).length;
+      const itemCount = Array.isArray(detailsRecord.items) ? detailsRecord.items.length : attempts.length;
+      maxScore = maxScore > 0 ? maxScore : itemCount;
+    }
+  }
+
+  if (exerciseType === 'category_fluency') {
+    const validatedItems = Array.isArray(detailsRecord.validatedItems)
+      ? detailsRecord.validatedItems
+      : Array.isArray(detailsRecord.items)
+      ? detailsRecord.items
+      : [];
+
+    const uniqueValidated = new Set(
+      validatedItems
+        .map((item: unknown) => String(item).trim().toLowerCase())
+        .filter(Boolean),
+    );
+
+    if (uniqueValidated.size > 0 || validatedItems.length > 0) {
+      score = uniqueValidated.size;
+      maxScore = maxScore > 0 ? maxScore : 20;
+    }
+  }
+
+  if (maxScore <= 0) {
+    maxScore = Math.max(score, 1);
+  }
+
+  return { score, maxScore };
+}
+
 export async function POST(req: Request) {
   try {
     const { exerciseType, score, maxScore, details } = await req.json();
@@ -31,7 +88,10 @@ export async function POST(req: Request) {
 
       // Only adjust if we have at least 3 recent data points for stability
       if (previousScores.length === 3) {
-        const avgPercentage = previousScores.reduce((acc, curr) => acc + (curr.score / curr.max_score), 0) / 3;
+        const avgPercentage = previousScores.reduce((acc, curr) => {
+          const safeMax = curr.max_score > 0 ? curr.max_score : 1;
+          return acc + (curr.score / safeMax);
+        }, 0) / 3;
 
         if (avgPercentage > 0.8) {
           currentDifficulty = Math.min(currentDifficulty + 1, 5);
@@ -41,14 +101,18 @@ export async function POST(req: Request) {
       }
     }
 
+    const providedScore = toFiniteNumber(score, 0);
+    const providedMaxScore = toFiniteNumber(maxScore, 0);
+    const normalized = recomputeScoreFromDetails(exerciseType, providedScore, providedMaxScore, details);
+
     // 2. Save the new score with the adjusted difficulty
     const { data, error } = await supabase
       .from('exercise_scores')
       .insert({
         patient_id: user.id,
         exercise_type: exerciseType,
-        score,
-        max_score: maxScore,
+        score: normalized.score,
+        max_score: normalized.maxScore,
         difficulty_level: currentDifficulty,
         details
       })
@@ -60,11 +124,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ 
       message: 'Score saved successfully', 
       nextDifficulty: currentDifficulty,
+      scoredFromDetails: normalized.score !== providedScore,
       data 
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error saving exercise score:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

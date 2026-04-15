@@ -141,10 +141,10 @@ export default function SpeechCognitionCard({ patientId }: { patientId: string }
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
               <Brain className="h-5 w-5 text-violet-600" />
-              Speech Cognitive Markers
+              Conversation Patterns
             </CardTitle>
             <CardDescription className="mt-1">
-              Last {sessions.length} recording{sessions.length !== 1 ? 's' : ''} — analysed by NLP classifier
+              Last {sessions.length} check-in{sessions.length !== 1 ? 's' : ''} — from recent conversations
             </CardDescription>
           </div>
 
@@ -204,7 +204,7 @@ export default function SpeechCognitionCard({ patientId }: { patientId: string }
 
         {/* Session history stacked bars */}
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">Session History</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">Check-in History</p>
           <div className="flex gap-2 items-end">
             {sessions.map((s, i) => (
               <SessionBar

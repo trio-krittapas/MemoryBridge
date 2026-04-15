@@ -282,9 +282,9 @@ export default function CaregiverDashboard() {
 
               {/* Signal breakdown pills */}
               <div className="grid grid-cols-3 gap-2 w-full mt-1">
-                <SignalPill label="Wellness"  value={`${overallScore}`}        good={overallScore >= 60} />
-                <SignalPill label="ML Risk"   value={healthRisk ? `${healthRisk.risk_score}` : '—'} good={!healthRisk || healthRisk.risk_score < 50} />
-                <SignalPill label="Flagged"   value={`${cognitiveFlags}/${totalSessions}`}           good={cognitiveFlags === 0} />
+                <SignalPill label="Wellness"     value={`${overallScore}`}        good={overallScore >= 60} />
+                <SignalPill label="Health Risk"  value={healthRisk ? `${healthRisk.risk_score}` : '—'} good={!healthRisk || healthRisk.risk_score < 50} />
+                <SignalPill label="Flagged"      value={`${cognitiveFlags}/${totalSessions}`}           good={cognitiveFlags === 0} />
               </div>
             </CardContent>
           </Card>
@@ -355,14 +355,14 @@ export default function CaregiverDashboard() {
 
       {/* ── Row 3: Trend Charts ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <TrendsChart data={trends} title="Speech Rate Stability"   dataKey="speech"    color="#10b981" />
+        <TrendsChart data={trends} title="Conversation Clarity"     dataKey="speech"    color="#10b981" />
         <TrendsChart data={trends} title="Exercise Performance"    dataKey="exercises" color="#8b5cf6" />
       </div>
 
       {/* ── Row 4: Engagement + Quick Stats ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-6">
-          <TrendsChart data={trends} title="Social Engagement Volume" dataKey="chat" color="#f59e0b" />
+          <TrendsChart data={trends} title="Daily Conversations" dataKey="chat" color="#f59e0b" />
         </div>
         <div className="lg:col-span-6">
           <Card className="h-full bg-zinc-50 border-zinc-200 rounded-[2rem] border shadow-sm">
@@ -381,11 +381,11 @@ export default function CaregiverDashboard() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-3.5 bg-white rounded-2xl shadow-sm border border-zinc-200">
-                  <span className="font-semibold text-zinc-600 text-sm">Speech Sessions (14d)</span>
+                  <span className="font-semibold text-zinc-600 text-sm">Check-in Sessions (14 days)</span>
                   <span className="text-xl font-black">{totalSessions}</span>
                 </div>
                 <div className="flex items-center justify-between p-3.5 bg-white rounded-2xl shadow-sm border border-zinc-200">
-                  <span className="font-semibold text-zinc-600 text-sm">Cognitive Flags Raised</span>
+                  <span className="font-semibold text-zinc-600 text-sm">Concerns Flagged</span>
                   <span className={`text-xl font-black ${cognitiveFlags > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                     {cognitiveFlags}
                   </span>
@@ -421,7 +421,7 @@ export default function CaregiverDashboard() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
-                  <HeartPulse className="h-4 w-4" /> Alzheimer's Risk — XGBoost Model
+                  <HeartPulse className="h-4 w-4" /> Health Risk Assessment
                 </p>
                 <p className={`text-3xl font-black ${
                   !healthRisk ? 'text-zinc-400' :
@@ -449,7 +449,7 @@ export default function CaregiverDashboard() {
               <p className="text-sm text-zinc-500 flex-1">
                 No risk assessment yet. Fill in the{' '}
                 <a href="/health" className="underline font-semibold text-blue-600">Health Profile</a>{' '}
-                to get an ML-based Alzheimer's risk score.
+                to get a personalised health risk assessment.
               </p>
             )}
           </div>
