@@ -25,14 +25,14 @@
 - **Node.js** 18+ and npm
 - **Ollama** installed (for local development)
   - Models: `qwen2.5:7b`, `nomic-embed-text`
-- **Supabase** project (free tier OK)
+- **Supabase**
 - **Python 3.9+** (for speech analysis sidecar)
 
 ### Setup
 
 1. **Clone and install:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/memorybridge.git
+   git clone https://github.com/trio-krittapas/MemoryBridge.git
    cd memorybridge
    npm install
    ```
@@ -202,19 +202,3 @@ This is a NAISC 2026 competition entry. Pull requests welcome!
 ## License
 
 MIT
-
----
-
-## Contact
-
-**Team:** MemoryBridge  
-**Email:** support@memorybridge.sg  
-**GitHub:** https://github.com/YOUR_USERNAME/memorybridge
-
----
-
-## Acknowledgments
-
-- Singapore dementia patients & caregivers for inspiration
-- NAISC 2026 organizers
-- Open-source communities (Next.js, Vercel AI SDK, Supabase, etc.)
